@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SAR Coord App</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Admin Dashboard</h1>
+        <nav>
+            <a href="#users">Users</a>
+            <a href="#events">Events</a>
+            <a href="#map">Map</a>
+        </nav>
+    </header>
+    <main>
+        <section id="users">
+            <h2>User Management</h2>
+            <div id="user-list"></div>
+            <form id="role-form">
+                <label for="user-id">User ID:</label>
+                <input type="text" id="user-id" required>
+                <label for="role">Role:</label>
+                <select id="role">
+                    <option value="searcher">Searcher</option>
+                    <option value="coordinator">Coordinator</option>
+                </select>
+                <button type="submit">Update Role</button>
+            </form>
+        </section>
+        <section id="events">
+            <h2>Event Management</h2>
+            <div id="event-list"></div>
+            <form id="event-form">
+                <label for="event-name">Event Name:</label>
+                <input type="text" id="event-name" required>
+                <button type="submit">Create Event</button>
+            </form>
+        </section>
+        <section id="map">
+            <h2>Live Map</h2>
+            <div id="map" style="height: 500px;"></div>
+        </section>
+    </main>
+    <script src="js/script.js"></script>
+</body>
+</html>
+    

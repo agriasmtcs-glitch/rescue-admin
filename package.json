@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://agriasmtcs-glitch.github.io/rescue-admin",  // <-- Add hozzá ezt! Cseréld <felhasználóneved>-re.
+  "homepage": "https://agriasmtcs-glitch.github.io/rescue-admin",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

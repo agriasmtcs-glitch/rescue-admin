@@ -426,7 +426,7 @@ const SearchManager = () => {
     const tracksByUser = {};
     const GAP_THRESHOLD_MS = 60 * 1000; 
     const ACCURACY_THRESHOLD = 50; 
-    const MAX_DISTANCE_JUMP = 300; 
+    const MAX_DISTANCE_JUMP = 30; 
 
     let gpsTracks = markersData.filter(m => m.type === 'gps_track');
 
@@ -1624,7 +1624,7 @@ const SearchManager = () => {
                   value={height}
                   onChange={(e) => handleNumberChange(e.target.value, setHeight)}
                   min="0"
-                  max="300"
+                  max="100"
                 />
                 <label className="block mb-2">{t('clothing-label')}</label>
                 <input

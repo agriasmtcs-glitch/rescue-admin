@@ -39,7 +39,7 @@ const MapBounds = ({ missingPersons, markers }) => {
   return null;
 };
 
-// Segédfüggvény távolságszámításhoz (Haversine formula) - ÚJ
+// Segédfüggvény távolságszámításhoz (Haversine formula)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371e3; // Föld sugara méterben
   const φ1 = lat1 * Math.PI / 180;
@@ -382,7 +382,6 @@ const SearchManager = () => {
               const cleanCoords = m.coordinates.trim().replace(/\s+/g, '');
               coordinates = JSON.parse(cleanCoords);
             } catch (e) {
-              console.error('Error parsing polygon coordinates:', e, m.coordinates);
               try {
                 const coordMatches = m.coordinates.match(/\[[^\]]+\]/g);
                 if (coordMatches) {
@@ -422,22 +421,20 @@ const SearchManager = () => {
     }
   };
 
-  // --- OKOSÍTOTT NYOMVONAL FELDOLGOZÁS (Távolság és Idő szűrővel) ---
+  // --- OKOSÍTOTT NYOMVONAL FELDOLGOZÁS (IDŐBÉLYEGEKKEL) ---
   const processUserTracks = (markersData) => {
     const tracksByUser = {};
-    const GAP_THRESHOLD_MS = 60 * 1000; // 1 perc (Ha ennél több idő telik el, új szakasz)
-    const ACCURACY_THRESHOLD = 50; // 50 méter (Ennél rosszabb pontokat eldobunk)
-    const MAX_DISTANCE_JUMP = 300; // 300 méter (Teleportálás elleni védelem)
+    const GAP_THRESHOLD_MS = 60 * 1000; 
+    const ACCURACY_THRESHOLD = 50; 
+    const MAX_DISTANCE_JUMP = 300; 
 
     let gpsTracks = markersData.filter(m => m.type === 'gps_track');
 
-    // Időrendi sorrend biztosítása JavaScript oldalon is
     gpsTracks.sort((a, b) => {
       return new Date(a.created_at) - new Date(b.created_at);
     });
 
     gpsTracks.forEach(marker => {
-      // 1. PONTOSSÁG SZŰRÉS: Ha az accuracy túl nagy (rossz), eldobjuk a pontot
       if (marker.accuracy && parseFloat(marker.accuracy) > ACCURACY_THRESHOLD) {
         return; 
       }
@@ -450,50 +447,48 @@ const SearchManager = () => {
       const currentTime = new Date(marker.created_at).getTime();
 
       if (!isNaN(lat) && !isNaN(lng)) {
-        // Ha még nincs adata a usernek, inicializáljuk
         if (!tracksByUser[userId]) {
           tracksByUser[userId] = {
-            segments: [[]], // Tömbök tömbje a szakaszoknak
+            segments: [[]], 
+            segmentTimes: [{ start: currentTime, end: currentTime }], // Szakasz idők
             lastTime: currentTime,
             lastLat: lat,
             lastLng: lng,
             userInfo: marker.user
           };
-          // Az első pontot hozzáadjuk az első szakaszhoz
           tracksByUser[userId].segments[0].push([lat, lng]);
           return;
         }
 
         const userData = tracksByUser[userId];
         const currentSegments = userData.segments;
+        const currentTimes = userData.segmentTimes;
         
-        // Különbségek számítása
         const timeDiff = currentTime - userData.lastTime;
         const distDiff = calculateDistance(userData.lastLat, userData.lastLng, lat, lng);
 
-        // 2. SZAKASZOLÁS: Új vonalat kezdünk, ha:
-        // A) Túl sok idő telt el (szünet volt) VAGY
-        // B) Túl nagyot ugrott térben (teleport)
         if ((timeDiff > GAP_THRESHOLD_MS || distDiff > MAX_DISTANCE_JUMP) && currentSegments[currentSegments.length - 1].length > 0) {
           currentSegments.push([]); 
+          currentTimes.push({ start: currentTime, end: currentTime }); // Új időszakasz
         }
 
-        // Pont hozzáadása az aktuális szakaszhoz
         currentSegments[currentSegments.length - 1].push([lat, lng]);
-        
-        // Referenciák frissítése
+        currentTimes[currentTimes.length - 1].end = currentTime; // Végidő frissítése
+
         userData.lastTime = currentTime;
         userData.lastLat = lat;
         userData.lastLng = lng;
       }
     });
 
-    console.log('Processed tracks (segmented):', tracksByUser);
     tracksByUserRef.current = tracksByUser;
-    // Objektumból tömbbé alakítjuk a rendereléshez
     setUserTracks(Object.values(tracksByUser));
   };
 
+  // ... (A többi függvény változatlan: createEvent, updateEvent, stb.) ...
+  // Másold ide a többi függvényt az előző file-ból, vagy hagyd őket változatlanul
+  // (Csak a return blokk és a processUserTracks változott jelentősen)
+  
   const createEvent = async (e) => {
     e.preventDefault();
     if (!['admin', 'coordinator'].includes(currentUserRole)) {
@@ -1019,11 +1014,9 @@ const SearchManager = () => {
 
   const renderProbZones = (probZones) => {
     if (!probZones || !showProbZones) {
-      console.log('Prob zones skipped: probZones is null or showProbZones is false', { probZones, showProbZones });
       return null;
     }
     try {
-      console.log('Processing prob_zones:', probZones);
       const zones = typeof probZones === 'string' ? JSON.parse(probZones) : probZones;
       const zoneKeys = ['zone95', 'zone75', 'zone50', 'zone25'];
       const zoneColors = ['#0000FF', '#008000', '#FFA500', '#FF0000'];
@@ -1035,10 +1028,7 @@ const SearchManager = () => {
       ];
       return zoneKeys.map((key, index) => {
         const zone = zones[key];
-        if (!zone) {
-          console.warn(`Zone ${key} not found in prob_zones`, zones);
-          return null;
-        }
+        if (!zone) return null;
         if (Array.isArray(zone) && zone.every(coord => typeof coord.lat === 'number' && typeof coord.lng === 'number')) {
           return (
             <Polygon
@@ -1052,7 +1042,6 @@ const SearchManager = () => {
             </Polygon>
           );
         }
-        console.warn(`Invalid zone data for ${key}:`, zone);
         return null;
       }).filter(Boolean);
     } catch (err) {
@@ -1141,6 +1130,7 @@ const SearchManager = () => {
 
       {['admin', 'coordinator'].includes(currentUserRole) ? (
         <>
+          {/* ... Table and Forms ... */}
           <h3 className="text-xl font-semibold mb-2">{t('events-h2')}</h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse mb-4">
@@ -1379,15 +1369,18 @@ const SearchManager = () => {
                     }
                   })}
                 
-                {/* --- JAVÍTOTT GPS NYOMVONAL RAJZOLÁS --- */}
-                {/* Itt most már szakaszokat (segments) rajzolunk ki, nem egyetlen vonalat */}
+                {/* --- JAVÍTOTT GPS NYOMVONAL RAJZOLÁS IDŐBÉLYEGGEL --- */}
                 {userTracks.map((userData, userIndex) => {
                   const segments = userData.segments;
+                  const segmentTimes = userData.segmentTimes; // IDŐBÉLYEGEK
                   const userColor = getRandomColor(userIndex); 
 
                   return segments.map((segment, segIndex) => {
-                    // Csak akkor rajzoljuk ki, ha van adat a szakaszban
                     if (segment && segment.length > 0) {
+                      const times = segmentTimes[segIndex];
+                      const startTimeStr = times ? new Date(times.start).toLocaleTimeString() : 'N/A';
+                      const endTimeStr = times ? new Date(times.end).toLocaleTimeString() : 'N/A';
+
                       return (
                         <Polyline
                           key={`track-${userIndex}-${segIndex}`}
@@ -1400,6 +1393,10 @@ const SearchManager = () => {
                             <div>
                               <p className="font-bold">{t('gps-track')}</p>
                               <p>{t('recorded-by')}: {userData.userInfo?.full_name || 'N/A'}</p>
+                              {/* IDŐTARTAM KIÍRÁSA */}
+                              <p style={{fontWeight: 'bold'}}>
+                                {t('time')}: {startTimeStr} - {endTimeStr}
+                              </p>
                               <p>{t('section')}: {segIndex + 1}</p>
                             </div>
                           </Popup>

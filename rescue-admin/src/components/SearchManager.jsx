@@ -313,6 +313,7 @@ const SearchManager = () => {
       const cacheKey = `markers-${eventId}`;
       const cached = cache.current.get(cacheKey);
      
+      // Cache-elt adatokat is újra feldolgozzuk a szűrés miatt
       if (cached) {
         setMarkers(cached);
         processUserTracks(cached);
@@ -345,7 +346,7 @@ const SearchManager = () => {
             user:users(full_name, phone_number)
           `)
           .eq('event_id', eventId)
-          .order('created_at', { ascending: true }) 
+          .order('created_at', { ascending: true }) // Adatbázis szintű rendezés
       ]);
       
       if (mapMarkersError || polygonsError || gpsTracksError) {
@@ -366,6 +367,7 @@ const SearchManager = () => {
               const cleanCoords = m.coordinates.trim().replace(/\s+/g, '');
               coordinates = JSON.parse(cleanCoords);
             } catch (e) {
+              console.error('Error parsing polygon coordinates:', e, m.coordinates);
               try {
                 const coordMatches = m.coordinates.match(/\[[^\]]+\]/g);
                 if (coordMatches) {
@@ -395,6 +397,7 @@ const SearchManager = () => {
         }))
       ];
       
+      console.log('All markers with user data:', allMarkers);
       setMarkers(allMarkers || []);
       cache.current.set(cacheKey, allMarkers || []);
       processUserTracks(allMarkers || []);
@@ -404,7 +407,7 @@ const SearchManager = () => {
     }
   };
 
-  // --- OKOSÍTOTT NYOMVONAL FELDOLGOZÁS ---
+  // --- OKOSÍTOTT NYOMVONAL FELDOLGOZÁS (Segmentálás és Szűrés) ---
   const processUserTracks = (markersData) => {
     const tracksByUser = {};
     const GAP_THRESHOLD_MS = 60 * 1000; // 1 perc (Ha ennél több idő telik el, új szakasz)
@@ -412,18 +415,18 @@ const SearchManager = () => {
 
     let gpsTracks = markersData.filter(m => m.type === 'gps_track');
 
-    // Időrendi sorrend biztosítása
+    // Időrendi sorrend biztosítása JavaScript oldalon is
     gpsTracks.sort((a, b) => {
       return new Date(a.created_at) - new Date(b.created_at);
     });
 
     gpsTracks.forEach(marker => {
-      if (!marker.user_id || !marker.latitude || !marker.longitude) return;
-
-      // 1. PONTOSSÁG SZŰRÉSE: Ha az accuracy túl nagy (rossz), eldobjuk
+      // 1. PONTOSSÁG SZŰRÉS: Ha az accuracy túl nagy (rossz), eldobjuk a pontot
       if (marker.accuracy && parseFloat(marker.accuracy) > ACCURACY_THRESHOLD) {
         return; 
       }
+
+      if (!marker.user_id || !marker.latitude || !marker.longitude) return;
 
       const userId = marker.user_id;
       const lat = parseFloat(marker.latitude);
@@ -431,6 +434,7 @@ const SearchManager = () => {
       const currentTime = new Date(marker.created_at).getTime();
 
       if (!isNaN(lat) && !isNaN(lng)) {
+        // Ha még nincs adata a usernek, inicializáljuk
         if (!tracksByUser[userId]) {
           tracksByUser[userId] = {
             segments: [[]], // Tömbök tömbje a szakaszoknak
@@ -446,17 +450,20 @@ const SearchManager = () => {
         const timeDiff = currentTime - userData.lastTime;
 
         // 2. SZAKASZOLÁS: Ha szünet volt (nagy időkülönbség), új vonalat kezdünk
+        // De csak akkor, ha nem ez az legelső pont
         if (timeDiff > GAP_THRESHOLD_MS && currentSegments[currentSegments.length - 1].length > 0) {
           currentSegments.push([]); 
         }
 
+        // Pont hozzáadása az aktuális szakaszhoz
         currentSegments[currentSegments.length - 1].push([lat, lng]);
         userData.lastTime = currentTime;
       }
     });
 
-    console.log('Processed tracks (smart):', tracksByUser);
+    console.log('Processed tracks (segmented):', tracksByUser);
     tracksByUserRef.current = tracksByUser;
+    // Objektumból tömbbé alakítjuk a rendereléshez
     setUserTracks(Object.values(tracksByUser));
   };
 
@@ -1346,8 +1353,8 @@ const SearchManager = () => {
                   })}
                 
                 {/* --- JAVÍTOTT GPS NYOMVONAL RAJZOLÁS --- */}
+                {/* Itt most már szakaszokat (segments) rajzolunk ki, nem egyetlen vonalat */}
                 {userTracks.map((userData, userIndex) => {
-                  // Most már szakaszok listáját kapjuk
                   const segments = userData.segments;
                   const userColor = getRandomColor(userIndex); 
 

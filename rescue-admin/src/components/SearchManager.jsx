@@ -313,9 +313,7 @@ const SearchManager = () => {
       const cacheKey = `markers-${eventId}`;
       const cached = cache.current.get(cacheKey);
      
-      // Figyelem: A cachelt adatot is újra kell rendezni, ha az nem volt,
-      // de itt most a friss lekérdezésre koncentrálunk.
-      // Ha a cache-ben már jó sorrendben van, akkor rendben.
+      // Cachelt adatot is újra rendezzük biztos ami biztos
       if (cached) {
         setMarkers(cached);
         processUserTracks(cached);
@@ -348,7 +346,7 @@ const SearchManager = () => {
             user:users(full_name, phone_number)
           `)
           .eq('event_id', eventId)
-          .order('created_at', { ascending: true }) // JAVÍTÁS 1: Adatbázis szintű rendezés
+          .order('created_at', { ascending: true }) // Adatbázis szintű rendezés
       ]);
       
       if (mapMarkersError || polygonsError || gpsTracksError) {
@@ -409,20 +407,19 @@ const SearchManager = () => {
     }
   };
 
+  // --- ÚJ SZAKASZOLÓ LOGIKA ---
   const processUserTracks = (markersData) => {
     const tracksByUser = {};
-    const GAP_THRESHOLD_MS = 60 * 1000; // 1 perc (ha ennél több idő telik el, új szakaszt kezdünk)
+    const GAP_THRESHOLD_MS = 60 * 1000; // 1 perc
 
-    // 1. Kiszűrjük a GPS pontokat
     let gpsTracks = markersData.filter(m => m.type === 'gps_track');
 
-    // 2. Sorba rendezzük őket idő szerint
+    // Biztosíték: JavaScript rendezés
     gpsTracks.sort((a, b) => {
       return new Date(a.created_at) - new Date(b.created_at);
     });
 
-    // 3. Feldolgozás szakaszokra bontva
-    gpsTracks.forEach((marker, index) => {
+    gpsTracks.forEach(marker => {
       if (!marker.user_id || !marker.latitude || !marker.longitude) return;
 
       const userId = marker.user_id;
@@ -431,40 +428,30 @@ const SearchManager = () => {
       const currentTime = new Date(marker.created_at).getTime();
 
       if (!isNaN(lat) && !isNaN(lng)) {
-        // Ha még nincs adata a usernek, létrehozzuk a tömböt egy üres első szakasszal
         if (!tracksByUser[userId]) {
           tracksByUser[userId] = {
-            segments: [[]], // Tömbök tömbje: [ [szakasz1], [szakasz2] ]
+            segments: [[]], 
             lastTime: currentTime,
-            userInfo: marker.user // Eltároljuk a user infót is a popupokhoz
+            userInfo: marker.user
           };
         }
 
         const userData = tracksByUser[userId];
         const currentSegments = userData.segments;
         
-        // Megnézzük, mennyi idő telt el az előző pont óta
         const timeDiff = currentTime - userData.lastTime;
 
-        // Ha a különbség nagyobb, mint a küszöb (pl. szünet volt), új szakaszt kezdünk
-        // De csak akkor, ha nem ez az legelső pont (timeDiff 0)
         if (timeDiff > GAP_THRESHOLD_MS && currentSegments[currentSegments.length - 1].length > 0) {
-          currentSegments.push([]); // Új üres szakasz hozzáadása
+          currentSegments.push([]); // Új szakasz kezdése szünet után
         }
 
-        // Hozzáadjuk a pontot az aktuális (utolsó) szakaszhoz
         currentSegments[currentSegments.length - 1].push([lat, lng]);
-        
-        // Frissítjük az utolsó időbélyeget
         userData.lastTime = currentTime;
       }
     });
 
     console.log('Processed tracks (segmented):', tracksByUser);
-    tracksByUserRef.current = tracksByUser; // Ref frissítése
-    
-    // Átalakítjuk a state-hez, hogy tömb legyen
-    // Most már objektumokat adunk vissza, amik tartalmazzák a szegmenseket és a user infót
+    tracksByUserRef.current = tracksByUser;
     setUserTracks(Object.values(tracksByUser));
   };
 
@@ -1353,14 +1340,12 @@ const SearchManager = () => {
                     }
                   })}
                 
-                {/* GPS Nyomvonalak kirajzolása */}
+                {/* SZAKASZOLT GPS NYOMVONALAK KIRAJZOLÁSA */}
                 {userTracks.map((userData, userIndex) => {
-                  // userData most már tartalmazza a 'segments' tömböt és a 'userInfo'-t
                   const segments = userData.segments;
-                  const userColor = getRandomColor(userIndex); // Fix szín a felhasználónak
+                  const userColor = getRandomColor(userIndex); 
 
                   return segments.map((segment, segIndex) => {
-                    // Csak akkor rajzoljuk ki, ha van benne legalább 1 pont (de inkább 2 kell a vonalhoz)
                     if (segment && segment.length > 0) {
                       return (
                         <Polyline
@@ -1374,7 +1359,6 @@ const SearchManager = () => {
                             <div>
                               <p className="font-bold">{t('gps-track')}</p>
                               <p>{t('recorded-by')}: {userData.userInfo?.full_name || 'N/A'}</p>
-                              {/* Az utolsó pont idejét írjuk ki a szakaszban */}
                               <p>{t('section')}: {segIndex + 1}</p>
                             </div>
                           </Popup>

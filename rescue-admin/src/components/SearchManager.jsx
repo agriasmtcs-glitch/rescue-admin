@@ -39,6 +39,22 @@ const MapBounds = ({ missingPersons, markers }) => {
   return null;
 };
 
+// Segédfüggvény távolságszámításhoz (Haversine formula) - ÚJ
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371e3; // Föld sugara méterben
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Távolság méterben
+};
+
 const SearchManager = () => {
   const { t } = useTranslation();
   const [events, setEvents] = useState([]);
@@ -313,7 +329,6 @@ const SearchManager = () => {
       const cacheKey = `markers-${eventId}`;
       const cached = cache.current.get(cacheKey);
      
-      // Cache-elt adatokat is újra feldolgozzuk a szűrés miatt
       if (cached) {
         setMarkers(cached);
         processUserTracks(cached);
@@ -346,7 +361,7 @@ const SearchManager = () => {
             user:users(full_name, phone_number)
           `)
           .eq('event_id', eventId)
-          .order('created_at', { ascending: true }) // Adatbázis szintű rendezés
+          .order('created_at', { ascending: true }) 
       ]);
       
       if (mapMarkersError || polygonsError || gpsTracksError) {
@@ -407,11 +422,12 @@ const SearchManager = () => {
     }
   };
 
-  // --- OKOSÍTOTT NYOMVONAL FELDOLGOZÁS (Segmentálás és Szűrés) ---
+  // --- OKOSÍTOTT NYOMVONAL FELDOLGOZÁS (Távolság és Idő szűrővel) ---
   const processUserTracks = (markersData) => {
     const tracksByUser = {};
     const GAP_THRESHOLD_MS = 60 * 1000; // 1 perc (Ha ennél több idő telik el, új szakasz)
     const ACCURACY_THRESHOLD = 50; // 50 méter (Ennél rosszabb pontokat eldobunk)
+    const MAX_DISTANCE_JUMP = 300; // 300 méter (Teleportálás elleni védelem)
 
     let gpsTracks = markersData.filter(m => m.type === 'gps_track');
 
@@ -439,25 +455,36 @@ const SearchManager = () => {
           tracksByUser[userId] = {
             segments: [[]], // Tömbök tömbje a szakaszoknak
             lastTime: currentTime,
+            lastLat: lat,
+            lastLng: lng,
             userInfo: marker.user
           };
+          // Az első pontot hozzáadjuk az első szakaszhoz
+          tracksByUser[userId].segments[0].push([lat, lng]);
+          return;
         }
 
         const userData = tracksByUser[userId];
         const currentSegments = userData.segments;
         
-        // Időkülönbség vizsgálata
+        // Különbségek számítása
         const timeDiff = currentTime - userData.lastTime;
+        const distDiff = calculateDistance(userData.lastLat, userData.lastLng, lat, lng);
 
-        // 2. SZAKASZOLÁS: Ha szünet volt (nagy időkülönbség), új vonalat kezdünk
-        // De csak akkor, ha nem ez az legelső pont
-        if (timeDiff > GAP_THRESHOLD_MS && currentSegments[currentSegments.length - 1].length > 0) {
+        // 2. SZAKASZOLÁS: Új vonalat kezdünk, ha:
+        // A) Túl sok idő telt el (szünet volt) VAGY
+        // B) Túl nagyot ugrott térben (teleport)
+        if ((timeDiff > GAP_THRESHOLD_MS || distDiff > MAX_DISTANCE_JUMP) && currentSegments[currentSegments.length - 1].length > 0) {
           currentSegments.push([]); 
         }
 
         // Pont hozzáadása az aktuális szakaszhoz
         currentSegments[currentSegments.length - 1].push([lat, lng]);
+        
+        // Referenciák frissítése
         userData.lastTime = currentTime;
+        userData.lastLat = lat;
+        userData.lastLng = lng;
       }
     });
 

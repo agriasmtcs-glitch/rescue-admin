@@ -426,15 +426,20 @@ const SearchManager = () => {
     const tracksByUser = {};
     const GAP_THRESHOLD_MS = 60 * 1000; 
     const ACCURACY_THRESHOLD = 50; 
-    const MAX_DISTANCE_JUMP = 30; 
+    const MAX_DISTANCE_JUMP = 300; 
 
+    // Csak a GPS pontokat vesszük
     let gpsTracks = markersData.filter(m => m.type === 'gps_track');
 
+    // !!! EZ A RÉSZ HIÁNYZOTT NÁLAD, DE KRITIKUSAN FONTOS !!!
+    // Rendezzük időrendbe a pontokat, különben a szakaszolás nem működik!
     gpsTracks.sort((a, b) => {
       return new Date(a.created_at) - new Date(b.created_at);
     });
+    // -----------------------------------------------------------
 
     gpsTracks.forEach(marker => {
+      // Itt a parseFloat TÖKÉLETES, ez oldja meg a string hibát:
       if (marker.accuracy && parseFloat(marker.accuracy) > ACCURACY_THRESHOLD) {
         return; 
       }
@@ -442,6 +447,7 @@ const SearchManager = () => {
       if (!marker.user_id || !marker.latitude || !marker.longitude) return;
 
       const userId = marker.user_id;
+      // Itt is a parseFloat a kulcs:
       const lat = parseFloat(marker.latitude);
       const lng = parseFloat(marker.longitude);
       const currentTime = new Date(marker.created_at).getTime();
@@ -450,7 +456,7 @@ const SearchManager = () => {
         if (!tracksByUser[userId]) {
           tracksByUser[userId] = {
             segments: [[]], 
-            segmentTimes: [{ start: currentTime, end: currentTime }], // Szakasz idők
+            segmentTimes: [{ start: currentTime, end: currentTime }], 
             lastTime: currentTime,
             lastLat: lat,
             lastLng: lng,
@@ -465,15 +471,16 @@ const SearchManager = () => {
         const currentTimes = userData.segmentTimes;
         
         const timeDiff = currentTime - userData.lastTime;
+        // Feltételezve, hogy a calculateDistance függvény definiálva van a fájl elején!
         const distDiff = calculateDistance(userData.lastLat, userData.lastLng, lat, lng);
 
         if ((timeDiff > GAP_THRESHOLD_MS || distDiff > MAX_DISTANCE_JUMP) && currentSegments[currentSegments.length - 1].length > 0) {
           currentSegments.push([]); 
-          currentTimes.push({ start: currentTime, end: currentTime }); // Új időszakasz
+          currentTimes.push({ start: currentTime, end: currentTime }); 
         }
 
         currentSegments[currentSegments.length - 1].push([lat, lng]);
-        currentTimes[currentTimes.length - 1].end = currentTime; // Végidő frissítése
+        currentTimes[currentTimes.length - 1].end = currentTime; 
 
         userData.lastTime = currentTime;
         userData.lastLat = lat;

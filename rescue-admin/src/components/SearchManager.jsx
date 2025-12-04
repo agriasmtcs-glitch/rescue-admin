@@ -428,9 +428,16 @@ const SearchManager = () => {
     const ACCURACY_THRESHOLD = 50; 
     const MAX_DISTANCE_JUMP = 300; 
 
-    // Csak a GPS pontokat vesszük
-    let gpsTracks = markersData.filter(m => m.type === 'gps_track');
+     // Csak a GPS pontokat vesszük
+      let gpsTracks = markersData.filter(m => m.type === 'gps_track');
 
+      // !!! KRITIKUS JAVÍTÁS: IDŐRENDI RENDEZÉS !!!
+      // A pontokat időrendbe kell rendezni a helyes szakaszoláshoz
+      gpsTracks.sort((a, b) => {
+        const timeA = new Date(a.created_at).getTime();
+        const timeB = new Date(b.created_at).getTime();
+        return timeA - timeB; // Növekvő sorrend (régebbi → újabb)
+      });
     // !!! EZ A RÉSZ HIÁNYZOTT NÁLAD, DE KRITIKUSAN FONTOS !!!
     // Rendezzük időrendbe a pontokat, különben a szakaszolás nem működik!
     gpsTracks.sort((a, b) => {

@@ -330,45 +330,42 @@ const SearchManager = () => {
       const cached = cache.current.get(cacheKey);
      
       if (cached) {
-        setMarkers(cached);
-        processUserTracks(cached);
+        // Megjegyzés: A cache struktúrát érdemes lehet frissíteni, 
+        // de most egyszerűsítve kezeljük a meglévő logikával.
+        setMarkers(cached.allMarkers);
+        // Ha a cache-ben elmentettük a trackeket is:
+        if (cached.optimizedTracks) {
+            processUserTracks(cached.optimizedTracks);
+        }
         return;
       }
 
       const [
         { data: mapMarkers, error: mapMarkersError },
         { data: polygons, error: polygonsError },
-        { data: gpsTracks, error: gpsTracksError }
+        // JAVÍTÁS: Itt már az optimalizált nézetet hívjuk!
+        { data: optimizedTracks, error: optimizedTracksError }
       ] = await Promise.all([
         supabase
           .from('map_markers')
-          .select(`
-            *,
-            user:users(full_name, phone_number)
-          `)
+          .select(`*, user:users(full_name, phone_number)`)
           .eq('event_id', eventId),
         supabase
           .from('polygons')
-          .select(`
-            *,
-            user:users(full_name, phone_number)
-          `)
+          .select(`*, user:users(full_name, phone_number)`)
           .eq('event_id', eventId),
         supabase
-          .from('gps_tracks')
-          .select(`
-            *,
-            user:users(full_name, phone_number)
-          `)
+          .from('optimized_user_tracks') // <--- ÚJ VIEW
+          .select('*')
           .eq('event_id', eventId)
-          .order('created_at', { ascending: true }) 
       ]);
       
-      if (mapMarkersError || polygonsError || gpsTracksError) {
-        console.error('Supabase error:', mapMarkersError || polygonsError || gpsTracksError);
-        throw mapMarkersError || polygonsError || gpsTracksError;
+      if (mapMarkersError || polygonsError || optimizedTracksError) {
+        console.error('Supabase error:', mapMarkersError || polygonsError || optimizedTracksError);
+        throw mapMarkersError || polygonsError || optimizedTracksError;
       }
       
+      // A térkép markerek feldolgozása (ez maradt a régi)
       const allMarkers = [
         ...(mapMarkers || []).map(m => ({
           ...m,
@@ -382,7 +379,8 @@ const SearchManager = () => {
               const cleanCoords = m.coordinates.trim().replace(/\s+/g, '');
               coordinates = JSON.parse(cleanCoords);
             } catch (e) {
-              try {
+               // Fallback parsing (maradhat a régi)
+               try {
                 const coordMatches = m.coordinates.match(/\[[^\]]+\]/g);
                 if (coordMatches) {
                   coordinates = coordMatches.map(coordPair => {
@@ -393,9 +391,7 @@ const SearchManager = () => {
                     return null;
                   }).filter(Boolean);
                 }
-              } catch (fallbackError) {
-                console.error('Fallback parsing also failed:', fallbackError);
-              }
+              } catch (fallbackError) {}
             }
           }
           return {
@@ -403,18 +399,17 @@ const SearchManager = () => {
             type: 'polygon',
             lat_lng: coordinates ? { coordinates } : null
           };
-        }),
-        ...(gpsTracks || []).map(m => ({
-          ...m,
-          type: 'gps_track',
-          lat_lng: m.latitude && m.longitude ? { coordinates: [m.longitude, m.latitude] } : null
-        }))
+        })
       ];
       
-      console.log('All markers with user data:', allMarkers);
       setMarkers(allMarkers || []);
-      cache.current.set(cacheKey, allMarkers || []);
-      processUserTracks(allMarkers || []);
+      
+      // A trackeket külön dolgozzuk fel az új függvénnyel
+      processUserTracks(optimizedTracks || []);
+
+      // Cache frissítése
+      cache.current.set(cacheKey, { allMarkers, optimizedTracks });
+
     } catch (err) {
       console.error('Error loading markers:', err);
       setError(t('error-loading-markers'));
@@ -422,76 +417,80 @@ const SearchManager = () => {
   };
 
   // --- OKOSÍTOTT NYOMVONAL FELDOLGOZÁS (IDŐBÉLYEGEKKEL) ---
-  const processUserTracks = (markersData) => {
+  // --- OKOSÍTOTT NYOMVONAL FELDOLGOZÁS (Webes verzió) ---
+  const processUserTracks = (optimizedData) => {
     const tracksByUser = {};
-    const GAP_THRESHOLD_MS = 60 * 1000; 
-    const ACCURACY_THRESHOLD = 50; 
-    const MAX_DISTANCE_JUMP = 300; 
+    const GAP_THRESHOLD_MS = 120 * 1000; // 2 perc (millisecben)
+    const ACCURACY_THRESHOLD = 50; // Pontosság szűrés
 
-     // Csak a GPS pontokat vesszük
-      let gpsTracks = markersData.filter(m => m.type === 'gps_track');
+    if (!Array.isArray(optimizedData)) {
+        console.warn("processUserTracks: nem tömböt kapott", optimizedData);
+        return;
+    }
 
-      // !!! KRITIKUS JAVÍTÁS: IDŐRENDI RENDEZÉS !!!
-      // A pontokat időrendbe kell rendezni a helyes szakaszoláshoz
-      gpsTracks.sort((a, b) => {
-        const timeA = new Date(a.created_at).getTime();
-        const timeB = new Date(b.created_at).getTime();
-        return timeA - timeB; // Növekvő sorrend (régebbi → újabb)
+    optimizedData.forEach(row => {
+      // Biztonsági ellenőrzések
+      if (!row.user_id || !row.track_points) return;
+
+      const userId = row.user_id;
+      const trackPoints = row.track_points; // Ez jön a View-ból (JSON tömb)
+
+      const segments = [[]]; // Szakaszok tömbje
+      const segmentTimes = [{ start: null, end: null }];
+      
+      let lastTime = null;
+      let isFirstPoint = true;
+
+      trackPoints.forEach(point => {
+        // Null check
+        if (!point) return;
+
+        // 1. Pontosság szűrés
+        // Figyelem: A view-ban 'acc', 'lat', 'lng', 'time' kulcsok vannak!
+        if (point.acc && parseFloat(point.acc) > ACCURACY_THRESHOLD) return;
+        if (!point.lat || !point.lng || !point.time) return;
+
+        const currentTime = new Date(point.time).getTime();
+        const lat = parseFloat(point.lat);
+        const lng = parseFloat(point.lng);
+
+        // 2. Szünet detektálás (Gap detection)
+        if (lastTime) {
+          const diff = currentTime - lastTime;
+          if (diff > GAP_THRESHOLD_MS) {
+            // Új szakaszt nyitunk
+            segments.push([]);
+            segmentTimes.push({ start: currentTime, end: currentTime });
+          }
+        }
+
+        // 3. Pont hozzáadása az aktuális szakaszhoz
+        const currentSegment = segments[segments.length - 1];
+        currentSegment.push([lat, lng]);
+
+        // Idők frissítése
+        const currentTimes = segmentTimes[segmentTimes.length - 1];
+        if (isFirstPoint || currentSegment.length === 1) {
+             currentTimes.start = currentTime;
+             isFirstPoint = false;
+        }
+        currentTimes.end = currentTime;
+
+        lastTime = currentTime;
       });
-    // !!! EZ A RÉSZ HIÁNYZOTT NÁLAD, DE KRITIKUSAN FONTOS !!!
-    // Rendezzük időrendbe a pontokat, különben a szakaszolás nem működik!
-    gpsTracks.sort((a, b) => {
-      return new Date(a.created_at) - new Date(b.created_at);
-    });
-    // -----------------------------------------------------------
 
-    gpsTracks.forEach(marker => {
-      // Itt a parseFloat TÖKÉLETES, ez oldja meg a string hibát:
-      if (marker.accuracy && parseFloat(marker.accuracy) > ACCURACY_THRESHOLD) {
-        return; 
-      }
-
-      if (!marker.user_id || !marker.latitude || !marker.longitude) return;
-
-      const userId = marker.user_id;
-      // Itt is a parseFloat a kulcs:
-      const lat = parseFloat(marker.latitude);
-      const lng = parseFloat(marker.longitude);
-      const currentTime = new Date(marker.created_at).getTime();
-
-      if (!isNaN(lat) && !isNaN(lng)) {
-        if (!tracksByUser[userId]) {
-          tracksByUser[userId] = {
-            segments: [[]], 
-            segmentTimes: [{ start: currentTime, end: currentTime }], 
-            lastTime: currentTime,
-            lastLat: lat,
-            lastLng: lng,
-            userInfo: marker.user
-          };
-          tracksByUser[userId].segments[0].push([lat, lng]);
-          return;
-        }
-
-        const userData = tracksByUser[userId];
-        const currentSegments = userData.segments;
-        const currentTimes = userData.segmentTimes;
-        
-        const timeDiff = currentTime - userData.lastTime;
-        // Feltételezve, hogy a calculateDistance függvény definiálva van a fájl elején!
-        const distDiff = calculateDistance(userData.lastLat, userData.lastLng, lat, lng);
-
-        if ((timeDiff > GAP_THRESHOLD_MS || distDiff > MAX_DISTANCE_JUMP) && currentSegments[currentSegments.length - 1].length > 0) {
-          currentSegments.push([]); 
-          currentTimes.push({ start: currentTime, end: currentTime }); 
-        }
-
-        currentSegments[currentSegments.length - 1].push([lat, lng]);
-        currentTimes[currentTimes.length - 1].end = currentTime; 
-
-        userData.lastTime = currentTime;
-        userData.lastLat = lat;
-        userData.lastLng = lng;
+      // Csak akkor mentjük, ha van érvényes pont
+      if (segments[0].length > 0) {
+        tracksByUser[userId] = {
+          segments: segments,
+          segmentTimes: segmentTimes,
+          // A View közvetlenül adja vissza a nevet és telefonszámot
+          userInfo: {
+            full_name: row.user_name || 'Ismeretlen',
+            phone_number: row.user_phone || 'N/A'
+          },
+          lastTime: lastTime
+        };
       }
     });
 

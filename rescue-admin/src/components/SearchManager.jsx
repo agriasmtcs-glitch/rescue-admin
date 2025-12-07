@@ -1391,34 +1391,44 @@ const SearchManager = () => {
                   return segments.map((segment, segIndex) => {
                     if (segment && segment.length > 0) {
                       const times = segmentTimes[segIndex];
-                      const startTimeStr = times ? new Date(times.start).toLocaleTimeString() : 'N/A';
-                      const endTimeStr = times ? new Date(times.end).toLocaleTimeString() : 'N/A';
+                      const startTimeStr = times 
+                          ? new Date(times.start).toLocaleString('hu-HU', { 
+                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                            }) 
+                          : 'N/A';
+      
+                        const endTimeStr = times 
+                          ? new Date(times.end).toLocaleString('hu-HU', { 
+                              hour: '2-digit', minute: '2-digit' 
+                            }) 
+                          : 'N/A';
 
-                      return (
-                        <Polyline
-                          key={`track-${userIndex}-${segIndex}`}
-                          positions={segment}
-                          color={userColor}
-                          weight={4}
-                          opacity={0.7}
-                        >
-                          <Popup>
-                            <div>
-                              <p className="font-bold">{t('gps-track')}</p>
-                              <p>{t('recorded-by')}: {userData.userInfo?.full_name || 'N/A'}</p>
-                              {/* IDŐTARTAM KIÍRÁSA */}
-                              <p style={{fontWeight: 'bold'}}>
-                                {t('time')}: {startTimeStr} - {endTimeStr}
-                              </p>
-                              <p>{t('section')}: {segIndex + 1}</p>
-                            </div>
-                          </Popup>
-                        </Polyline>
-                      );
-                    }
-                    return null;
-                  });
-                })}
+    // Ha azt akarod, hogy a vége dátum is teljesen ki legyen írva, használd ott is az első formátumot!
+
+                        return (
+                          <Polyline
+                            key={`track-${userIndex}-${segIndex}`}
+                            positions={segment}
+                            color={userColor}
+                            weight={4}
+                            opacity={0.7}
+                              >
+                            <Popup>
+                              <div>
+                                <p className="font-bold">{t('gps-track')}</p>
+                                <p>{t('recorded-by')}: {userData.userInfo?.full_name || 'N/A'}</p>
+                                {/* Itt jelenik meg a Dátum és Idő */}
+                                <p style={{fontWeight: 'bold'}}>
+                                  {t('time')}: {startTimeStr} - {endTimeStr}
+                                </p>
+                                <p>{t('section')}: {segIndex + 1}</p>
+                              </div>
+                            </Popup>
+                          </Polyline>
+                        );
+                      }
+                      return null;
+                    });
       
                 {missingPersons.map((person) => renderProbZones(person.prob_zones))}
                 

@@ -3,9 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-ro
 import { useTranslation } from 'react-i18next';
 import './index.css';
 import 'leaflet/dist/leaflet.css';
+import Dashboard from './components/Dashboard';
 import UserManagement from './components/UserManagement';
 import SearchManager from './components/SearchManager';
-import MapComponent from './components/Map';
+//import MapComponent from './components/Map';
 import HelpEditor from './components/HelpEditor';
 import Login from './components/Login';
 import { supabase } from './supabase';
@@ -52,7 +53,6 @@ function App() {
         <nav>
           <Link to="/user-management">{t('nav-user-management')}</Link>
           <Link to="/search-manager">{t('nav-search-manager')}</Link>
-          <Link to="/map">{t('nav-map')}</Link>
           <Link to="/help-editor">{t('nav-help-editor')}</Link>
           <select value={language} onChange={(e) => changeLanguage(e.target.value)}>
             <option value="hu">Magyar</option>
@@ -66,9 +66,9 @@ function App() {
       </header>
       <main>
         <Routes>
+          <Route path="/" element={<Dashboard />} />
           <Route path="/user-management" element={<UserManagement />} />
           <Route path="/search-manager" element={<SearchManager />} />
-          <Route path="/map" element={<MapComponent />} />
           <Route path="/help-editor" element={<HelpEditor />} />
           <Route path="/" element={<Navigate to="/search-manager" />} />
         </Routes>

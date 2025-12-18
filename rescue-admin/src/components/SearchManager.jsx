@@ -498,10 +498,6 @@ const SearchManager = () => {
     setUserTracks(Object.values(tracksByUser));
   };
 
-  // ... (A többi függvény változatlan: createEvent, updateEvent, stb.) ...
-  // Másold ide a többi függvényt az előző file-ból, vagy hagyd őket változatlanul
-  // (Csak a return blokk és a processUserTracks változott jelentősen)
-  
   const createEvent = async (e) => {
     e.preventDefault();
     if (!['admin', 'coordinator'].includes(currentUserRole)) {
@@ -1403,8 +1399,6 @@ const SearchManager = () => {
                             }) 
                           : 'N/A';
 
-    // Ha azt akarod, hogy a vége dátum is teljesen ki legyen írva, használd ott is az első formátumot!
-
                         return (
                           <Polyline
                             key={`track-${userIndex}-${segIndex}`}
@@ -1429,6 +1423,7 @@ const SearchManager = () => {
                       }
                       return null;
                     });
+                })}
       
                 {missingPersons.map((person) => renderProbZones(person.prob_zones))}
                 

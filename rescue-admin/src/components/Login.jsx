@@ -3,18 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabase';
 
 const Login = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  
+  // Csak a bejelentkezéshez szükséges állapotok maradtak
   const [email, setEmail] = useState(localStorage.getItem('email') || '');
   const [password, setPassword] = useState(localStorage.getItem('password') || '');
-  const [fullName, setFullName] = useState(localStorage.getItem('full_name') || '');
-  const [phone, setPhone] = useState(localStorage.getItem('phone_number') || '');
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [saveCredentials, setSaveCredentials] = useState(localStorage.getItem('save_credentials') === 'true');
   const [showResendButton, setShowResendButton] = useState(false);
 
   const validateEmail = (email) => /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email);
-  const validatePhone = (phone) => /^\+?[1-9]\d{1,14}$/.test(phone);
 
   const resendConfirmationEmail = async () => {
     setIsLoading(true);
@@ -32,69 +31,16 @@ const Login = () => {
   const saveToStorage = () => {
     if (saveCredentials) {
       localStorage.setItem('email', email);
+      // Megjegyzés: Jelszót localStorage-ban tárolni nem a legbiztonságosabb, 
+      // de a kényelmi funkció miatt meghagytam a kérésednek megfelelően.
       localStorage.setItem('password', password);
-      localStorage.setItem('full_name', fullName);
-      localStorage.setItem('phone_number', phone);
       localStorage.setItem('save_credentials', 'true');
     } else {
       localStorage.removeItem('email');
       localStorage.removeItem('password');
-      localStorage.removeItem('full_name');
-      localStorage.removeItem('phone_number');
       localStorage.setItem('save_credentials', 'false');
     }
   };
-
-  const register = async () => {
-    if (!validateEmail(email)) return setError(t('error-invalid-email'));
-    if (password.length < 6) return setError(t('error-password-too-short'));
-    if (!fullName) return setError(t('error-full-name-required'));
-    if (!validatePhone(phone)) return setError(t('error-invalid-phone'));
-
-    setIsLoading(true);
-    setError(null);
-    setShowResendButton(false);
-
-    try {
-      const { data, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            phone_number: phone,
-            language: i18n.language,
-            track_color: '#000000',
-            role: 'searcher'
-          }
-        }
-      });
-      
-      if (authError) throw authError;
-      
-      if (data.user) {
-      // Felhasználó létrehozása a users táblában
-      const { error: userError } = await supabase.from('users').insert({
-        id: data.user.id,
-        email: email,
-        full_name: fullName,
-        phone_number: phone,
-        role: 'searcher',
-        active: true
-      });
-
-      if (userError) throw userError;
-      
-      saveToStorage();
-      setError(t('error-email-confirmation-required'));
-      setShowResendButton(true);
-    }
-  } catch (err) {
-    setError(t('error-registration-error') + ' ' + err.message);
-  } finally {
-    setIsLoading(false);
-  }
-};
 
   const login = async () => {
     if (!validateEmail(email)) return setError(t('error-invalid-email'));
@@ -108,6 +54,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       saveToStorage();
+      // Sikeres belépés esetén az App.jsx automatikusan átirányít
     } catch (err) {
       if (err.message.includes('Email not confirmed')) {
         setError(t('error-email-not-confirmed'));
@@ -121,27 +68,86 @@ const Login = () => {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: 'auto', padding: '20px' }}>
-      <h2>{t('login-header')}</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form>
-        <label>{t('login-email')}</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <label>{t('login-password')}</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <label>{t('login-full-name')}</label>
-        <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-        <label>{t('login-phone-number')}</label>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} required />
-        <label>
+    <div style={{ maxWidth: '400px', margin: 'auto', padding: '20px', textAlign: 'center' }}>
+      <h2 style={{ marginBottom: '20px' }}>{t('login-header')}</h2>
+      
+      {error && (
+        <div style={{ 
+          backgroundColor: '#f8d7da', 
+          color: '#721c24', 
+          padding: '10px', 
+          borderRadius: '5px', 
+          marginBottom: '15px' 
+        }}>
+          {error}
+        </div>
+      )}
+      
+      <form style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <div style={{ textAlign: 'left' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>{t('login-email')}</label>
+          <input 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+          />
+        </div>
+        
+        <div style={{ textAlign: 'left' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>{t('login-password')}</label>
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+          />
+        </div>
+        
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
           <input type="checkbox" checked={saveCredentials} onChange={(e) => setSaveCredentials(e.target.checked)} />
           {t('login-save-credentials')}
         </label>
-        <button type="button" onClick={register} disabled={isLoading}>{t('login-register')}</button>
-        <button type="button" onClick={login} disabled={isLoading}>{t('login-login')}</button>
-        {showResendButton && <button type="button" onClick={resendConfirmationEmail} disabled={isLoading}>{t('login-resend-email')}</button>}
+        
+        <button 
+          type="button" 
+          onClick={login} 
+          disabled={isLoading}
+          style={{
+            padding: '10px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            fontSize: '1rem',
+            fontWeight: 'bold'
+          }}
+        >
+          {isLoading ? 'Belépés folyamatban...' : t('login-login')}
+        </button>
+
+        {showResendButton && (
+          <button 
+            type="button" 
+            onClick={resendConfirmationEmail} 
+            disabled={isLoading}
+            style={{
+              padding: '8px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              marginTop: '5px'
+            }}
+          >
+            {t('login-resend-email')}
+          </button>
+        )}
       </form>
-      {isLoading && <p>Loading...</p>}
     </div>
   );
 };

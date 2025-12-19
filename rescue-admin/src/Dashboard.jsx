@@ -170,7 +170,6 @@ const Dashboard = ({ session }) => {
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', gap: '2rem' }}>
           <div style={{ flex: '1 1 300px' }}>
             <h4 style={{ marginBottom: '0.5rem', color: '#444' }}>{t('dashboard.concept_title')}</h4>
-            {/* A dangerouslySetInnerHTML-t használjuk, hogy a <strong> tag-ek működjenek a fordításban */}
             <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: '#555' }} dangerouslySetInnerHTML={{ __html: t('dashboard.concept_text') }} />
           </div>
           <div style={{ flex: '1 1 300px' }}>
@@ -195,7 +194,7 @@ const cardStyle = {
   textDecoration: 'none',
   color: 'inherit',
   boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-  transition: 'transform 0.2s, box-shadow 0.2s',
+  transition: 'transform 0.2s',
   display: 'flex',
   flexDirection: 'column',
   cursor: 'pointer'

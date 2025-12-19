@@ -1146,7 +1146,7 @@ const resources = {
   "rights_reserved": "Wszelkie prawa zastrzeżone."
 }
     }
-  }
+  },
   uk: {
   translation: {
     'header-title': 'Панель адміністратора',

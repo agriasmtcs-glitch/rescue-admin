@@ -73,6 +73,7 @@ function App() {
             <option value="sk">Slovenský</option>
             <option value="ro">Română</option>
             <option value="pl">Polski</option>
+            <option value="uk">Українська</option> {/* ÚJ SOR */}
           </select>
 
           {session && (

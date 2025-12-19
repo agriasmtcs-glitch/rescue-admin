@@ -9,12 +9,10 @@ const Dashboard = ({ session }) => {
   const [stats, setStats] = useState({
     userCount: 0,
     activeSearches: [],
-    loading: false // Alapból false, csak akkor true ha van session
+    loading: false
   });
 
   useEffect(() => {
-    // Csak akkor kérünk le adatokat, ha be van jelentkezve, 
-    // különben 401-es hibát kapnánk az adatbázistól (RLS miatt).
     if (session) {
       setStats(prev => ({ ...prev, loading: true }));
       fetchDashboardData();
@@ -51,7 +49,7 @@ const Dashboard = ({ session }) => {
   return (
     <div className="dashboard-container" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
       
-      {/* 1. FIGYELMEZTETÉS - Mindig látható */}
+      {/* 1. FIGYELMEZTETÉS */}
       <div style={{ 
         backgroundColor: '#fff3cd', 
         color: '#856404', 
@@ -63,37 +61,35 @@ const Dashboard = ({ session }) => {
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
       }}>
         <h2 style={{ margin: '0 0 10px 0', fontSize: '1.5rem', color: '#856404', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-          ⚠️ ÉLETMENTŐ RENDSZER ⚠️
+          ⚠️ {t('dashboard.warning_title')} ⚠️
         </h2>
         <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1.1rem' }}>
-          Kérjük, ne zavarja a rendszer működését! Ez az alkalmazás éles bevetéseken, eltűnt személyek keresésére szolgál.
-          Bármilyen illetéktelen beavatkozás veszélyeztetheti a mentési folyamatokat.
+          {t('dashboard.warning_text')}
         </p>
       </div>
 
       {/* 2. Cím */}
       <section style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h1 style={{ fontSize: '2.5rem', color: '#333', marginBottom: '1rem' }}>Rescue Adminisztrációs Felület</h1>
+        <h1 style={{ fontSize: '2.5rem', color: '#333', marginBottom: '1rem' }}>{t('dashboard.title')}</h1>
         <p style={{ maxWidth: '800px', margin: '0 auto', color: '#555', lineHeight: '1.6', fontSize: '1.1rem' }}>
-          Az <strong>Agria Speciális Mentő és Tűzoltócsoport</strong> műveleti irányítási központja.
-          A rendszer célja a mentőcsapatok valós idejű koordinálása és a térképes irányítás.
+          {t('dashboard.description')}
         </p>
       </section>
 
       {/* 3. Menü vagy Bejelentkezés Gomb */}
       {session ? (
-        // HA BE VAN LÉPVE: Mutatjuk a kártyákat és adatokat
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '4rem' }}>
           
+          {/* Keresés kártya */}
           <Link to="/search-manager" style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <h3 style={{ margin: 0, color: '#0277bd' }}>🔍 Keresés Kezelő</h3>
+              <h3 style={{ margin: 0, color: '#0277bd' }}>🔍 {t('nav-search-manager')}</h3>
               <span style={{ fontSize: '2rem' }}>🗺️</span>
             </div>
             <div style={{ marginTop: '15px' }}>
-              <strong style={{ display: 'block', marginBottom: '5px', color: '#333' }}>Jelenleg futó keresések:</strong>
+              <strong style={{ display: 'block', marginBottom: '5px', color: '#333' }}>{t('dashboard.active_searches')}:</strong>
               {stats.loading ? (
-                <span>Adatok betöltése...</span>
+                <span>{t('loading')}...</span>
               ) : stats.activeSearches.length > 0 ? (
                 <ul style={{ paddingLeft: '20px', margin: '0', color: '#d32f2f', fontWeight: 'bold' }}>
                   {stats.activeSearches.map(search => (
@@ -101,45 +97,46 @@ const Dashboard = ({ session }) => {
                   ))}
                 </ul>
               ) : (
-                <span style={{ color: '#2e7d32', fontStyle: 'italic' }}>Nincs aktív riasztás.</span>
+                <span style={{ color: '#2e7d32', fontStyle: 'italic' }}>{t('dashboard.no_active_searches')}</span>
               )}
             </div>
           </Link>
 
+          {/* Felhasználók kártya */}
           <Link to="/user-management" style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <h3 style={{ margin: 0, color: '#0277bd' }}>👥 Felhasználók</h3>
+              <h3 style={{ margin: 0, color: '#0277bd' }}>👥 {t('nav-user-management')}</h3>
               <span style={{ fontSize: '2rem' }}>users</span>
             </div>
             <div style={{ marginTop: '15px' }}>
                <div style={{ borderTop: '1px solid #eee', paddingTop: '10px', display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                 <span>Regisztrált tagok:</span>
+                 <span>{t('dashboard.registered_members')}:</span>
                  {stats.loading ? (
                    <span>...</span>
                  ) : (
                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1976d2' }}>
-                     {stats.userCount} fő
+                     {stats.userCount} {t('dashboard.people_unit')}
                    </span>
                  )}
                </div>
             </div>
           </Link>
 
+          {/* Súgó kártya */}
           <Link to="/help-editor" style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <h3 style={{ margin: 0, color: '#0277bd' }}>📝 Súgó Szerkesztő</h3>
+              <h3 style={{ margin: 0, color: '#0277bd' }}>📝 {t('nav-help-editor')}</h3>
               <span style={{ fontSize: '2rem' }}>help</span>
             </div>
             <p style={{ marginTop: '15px', color: '#666', fontSize: '0.9rem' }}>
-              Segédanyagok karbantartása.
+              {t('dashboard.help_desc')}
             </p>
           </Link>
         </div>
       ) : (
-        // HA NINCS BELÉPVE: Nagy Login gomb
         <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
           <p style={{ marginBottom: '20px', fontSize: '1.2rem', color: '#666' }}>
-            A rendszer használatához bejelentkezés szükséges.
+            {t('dashboard.login_required')}
           </p>
           <Link to="/login" style={{
             display: 'inline-block',
@@ -155,7 +152,7 @@ const Dashboard = ({ session }) => {
           onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
           onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
           >
-            🔐 Belépés a rendszerbe
+            🔐 {t('login-login')}
           </Link>
         </div>
       )}
@@ -169,25 +166,20 @@ const Dashboard = ({ session }) => {
         borderTop: '4px solid #0056b3',
         textAlign: 'center'
       }}>
-        <h3 style={{ marginBottom: '1.5rem', color: '#0056b3' }}>A Projekt Háttere</h3>
+        <h3 style={{ marginBottom: '1.5rem', color: '#0056b3' }}>{t('dashboard.project_background')}</h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', gap: '2rem' }}>
           <div style={{ flex: '1 1 300px' }}>
-            <h4 style={{ marginBottom: '0.5rem', color: '#444' }}>Ötlet és Koncepció</h4>
-            <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: '#555' }}>
-              "Az alkalmazást az <strong>Agria Speciális Mentő és Tűzoltócsoport</strong> kezdeményezésére és elképzelései alapján jött létre."
-            </p>
+            <h4 style={{ marginBottom: '0.5rem', color: '#444' }}>{t('dashboard.concept_title')}</h4>
+            {/* A dangerouslySetInnerHTML-t használjuk, hogy a <strong> tag-ek működjenek a fordításban */}
+            <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: '#555' }} dangerouslySetInnerHTML={{ __html: t('dashboard.concept_text') }} />
           </div>
           <div style={{ flex: '1 1 300px' }}>
-            <h4 style={{ marginBottom: '0.5rem', color: '#444' }}>Megvalósítás és Fejlesztés</h4>
-            <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: '#555' }}>
-              "A kivitelezésben a <strong>Miskolci Egyetem</strong>,<br />
-              Műszaki Föld- és Környezettudományi Kar,<br />
-              Földrajz-Geoinformatika Intézet működött közre."
-            </p>
+            <h4 style={{ marginBottom: '0.5rem', color: '#444' }}>{t('dashboard.development_title')}</h4>
+            <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: '#555' }} dangerouslySetInnerHTML={{ __html: t('dashboard.development_text') }} />
           </div>
         </div>
         <div style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#888' }}>
-          © {new Date().getFullYear()} Minden jog fenntartva.
+          © {new Date().getFullYear()} {t('dashboard.rights_reserved')}
         </div>
       </footer>
 
@@ -195,7 +187,6 @@ const Dashboard = ({ session }) => {
   );
 };
 
-// Kártya stílus
 const cardStyle = {
   padding: '25px',
   backgroundColor: 'white',

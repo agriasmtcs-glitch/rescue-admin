@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabase';
 
+// --- ÚJ: Képek importálása ---
+// FONTOS: Győződj meg róla, hogy a fájlnevek egyeznek a src/assets/ mappában lévőkkel!
+import agriaLogo from '../assets/agria_logo.png'; 
+import miskolcLogo from '../assets/miskolc_logo.png';
+
 const Dashboard = ({ session }) => {
   const { t } = useTranslation();
   
@@ -166,20 +171,35 @@ const Dashboard = ({ session }) => {
         borderTop: '4px solid #0056b3',
         textAlign: 'center'
       }}>
-        <h3 style={{ marginBottom: '1.5rem', color: '#0056b3' }}>{t('dashboard.project_background')}</h3>
+        <h3 style={{ marginBottom: '2.5rem', color: '#0056b3' }}>{t('dashboard.project_background')}</h3>
+        
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', gap: '2rem' }}>
-          <div style={{ flex: '1 1 300px' }}>
+          
+          {/* Agria rész logóval */}
+          <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {/* LOGÓ LINKKEL */}
+            <a href="https://www.agriaspecmento.hu/" target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: '1.5rem', transition: 'transform 0.2s' }} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+               <img src={agriaLogo} alt="Agria Speciális Mentő" style={{ maxHeight: '100px', maxWidth: '100%', objectFit: 'contain' }} />
+            </a>
+            
             <h4 style={{ marginBottom: '0.5rem', color: '#444' }}>{t('dashboard.concept_title')}</h4>
             <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: '#555' }} dangerouslySetInnerHTML={{ __html: t('dashboard.concept_text') }} />
           </div>
-          <div style={{ flex: '1 1 300px' }}>
+
+          {/* Miskolci Egyetem rész logóval */}
+          <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {/* LOGÓ LINKKEL */}
+            <a href="https://mfk.uni-miskolc.hu/" target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: '1.5rem', transition: 'transform 0.2s' }} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+               <img src={miskolcLogo} alt="Miskolci Egyetem" style={{ maxHeight: '100px', maxWidth: '100%', objectFit: 'contain' }} />
+            </a>
+
             <h4 style={{ marginBottom: '0.5rem', color: '#444' }}>{t('dashboard.development_title')}</h4>
             <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: '#555' }} dangerouslySetInnerHTML={{ __html: t('dashboard.development_text') }} />
           </div>
         </div>
         
-        {/* ÚJ: Kapcsolat és Copyright rész */}
-        <div style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#888' }}>
+        {/* Kapcsolat és Copyright rész */}
+        <div style={{ marginTop: '3rem', fontSize: '0.9rem', color: '#888', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
           <div style={{ marginBottom: '10px' }}>
             <strong>{t('dashboard.contact_label')}:</strong> <a href="mailto:attila.szamosi@uni-miskolc.hu" style={{ color: '#0056b3', textDecoration: 'none' }}>attila.szamosi@uni-miskolc.hu</a>
           </div>

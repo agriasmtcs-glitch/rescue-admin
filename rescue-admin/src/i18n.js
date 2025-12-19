@@ -227,7 +227,8 @@ const resources = {
         "concept_text": "\"Az alkalmazást az <strong>Agria Speciális Mentő és Tűzoltócsoport</strong> kezdeményezésére és elképzelései alapján jött létre.\"",
         "development_title": "Megvalósítás és Fejlesztés",
         "development_text": "\"A kivitelezésben a <strong>Miskolci Egyetem</strong>,<br />Műszaki Föld- és Környezettudományi Kar,<br />Földrajz-Geoinformatika Intézet működött közre.\"",
-        "rights_reserved": "Minden jog fenntartva."
+        "rights_reserved": "Minden jog fenntartva.",
+        "contact_label": "Kapcsolat"
       }
     }
   },
@@ -456,7 +457,8 @@ const resources = {
         "concept_text": "\"The application was created on the initiative and based on the ideas of the <strong>Agria Special Rescue and Firefighter Team</strong>.\"",
         "development_title": "Implementation and Development",
         "development_text": "\"Developed in cooperation with the <strong>University of Miskolc</strong>,<br />Faculty of Earth Science and Engineering,<br />Institute of Geography and Geoinformatics.\"",
-        "rights_reserved": "All rights reserved."
+        "rights_reserved": "All rights reserved.",
+        "contact_label": "Contact"
       }
     }
   },
@@ -685,7 +687,8 @@ const resources = {
         "concept_text": "\"Aplikácia bola vytvorená z iniciatívy a na základe myšlienok <strong>Špeciálnej záchrannej a hasičskej skupiny Agria</strong>.\"",
         "development_title": "Realizácia a vývoj",
         "development_text": "\"Na realizácii spolupracovala <strong>Univerzita v Miskolci</strong>,<br />Fakulta technických vied o Zemi,<br />Inštitút geografie a geoinformatiky.\"",
-        "rights_reserved": "Všetky práva vyhradené."
+        "rights_reserved": "Všetky práva vyhradené.",
+        "contact_label": "Kontakt"
       }
     }
   },
@@ -914,7 +917,8 @@ const resources = {
         "concept_text": "\"Aplicația a fost creată la inițiativa și pe baza ideilor <strong>Grupului Special de Salvare și Stingere a Pompierilor Agria</strong>.\"",
         "development_title": "Implementare și dezvoltare",
         "development_text": "\"Dezvoltat în colaborare cu <strong>Universitatea din Miskolc</strong>,<br />Facultatea de Științe ale Pământului,<br />Institutul de Geografie și Geoinformatică.\"",
-        "rights_reserved": "Toate drepturile rezervate."
+        "rights_reserved": "Toate drepturile rezervate.",
+        "contact_label": "Contact"
       }
     }
   },
@@ -1143,7 +1147,8 @@ const resources = {
         "concept_text": "\"Aplikacja powstała z inicjatywy i w oparciu o pomysły <strong>Specjalnej Grupy Ratowniczo-Gaśniczej Strażaków Agria</strong>\"",
         "development_title": "Wdrożenie i rozwój",
         "development_text": "\"Zrealizowano we współpracy z <strong>Uniwersytetem w Miszkolcu</strong>,<br />Wydział Nauk o Ziemi i Inżynierii Środowiska,<br />Instytut Geografii i Geoinformatyki.\"",
-        "rights_reserved": "Wszelkie prawa zastrzeżone."
+        "rights_reserved": "Wszelkie prawa zastrzeżone.",
+        "contact_label": "Kontakt"
       }
     }
   },
@@ -1373,7 +1378,8 @@ const resources = {
         'concept_text': '"Застосунок було створено з ініціативи та на основі ідей <strong>Спеціальної рятувально-пожежної групи Agria</strong>."',
         'development_title': 'Реалізація та розробка',
         'development_text': '"Розроблено у співпраці з <strong>Університетом Мішкольца</strong>,<br />Факультет наук про Землю та інженерії,<br />Інститут географії та геоінформатики."',
-        'rights_reserved': 'Всі права захищені.'
+        'rights_reserved': 'Всі права захищені.',
+        'contact_label': 'Контакт'
       }
     }
   }

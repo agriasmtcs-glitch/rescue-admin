@@ -177,7 +177,12 @@ const Dashboard = ({ session }) => {
             <p style={{ fontStyle: 'italic', fontSize: '1.1rem', color: '#555' }} dangerouslySetInnerHTML={{ __html: t('dashboard.development_text') }} />
           </div>
         </div>
+        
+        {/* ÚJ: Kapcsolat és Copyright rész */}
         <div style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#888' }}>
+          <div style={{ marginBottom: '10px' }}>
+            <strong>{t('dashboard.contact_label')}:</strong> <a href="mailto:attila.szamosi@uni-miskolc.hu" style={{ color: '#0056b3', textDecoration: 'none' }}>attila.szamosi@uni-miskolc.hu</a>
+          </div>
           © {new Date().getFullYear()} {t('dashboard.rights_reserved')}
         </div>
       </footer>

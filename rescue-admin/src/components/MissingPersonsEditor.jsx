@@ -435,11 +435,14 @@ const MissingPersonsEditor = () => {
                   />
                 </div>
                 
-                <div style={{ marginBottom: '10px' }}>
+               <div style={{ marginBottom: '10px' }}>
                   <label style={{ display: 'block', marginBottom: '5px' }}>{t('height-label')}</label>
                   <input 
                     style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
                     type="number" 
+                    min="0"
+                    max="299"   /* Explicit módon engedélyezzük a 100 feletti értékeket */
+                    step="1"
                     value={height} 
                     onChange={(e) => setHeight(e.target.value)} 
                   />

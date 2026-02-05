@@ -435,16 +435,19 @@ const MissingPersonsEditor = () => {
                   />
                 </div>
                 
-               <div style={{ marginBottom: '10px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px' }}>{t('height-label')}</label>
+                <div style={{ marginBottom: '10px' }}>
+                 <label style={{ display: 'block', marginBottom: '5px' }}>{t('height-label')}</label>
                   <input 
                     style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-                    type="number" 
-                    min="0"
-                    max="299"   /* Explicit módon engedélyezzük a 100 feletti értékeket */
-                    step="1"
+                    type="text" 
+                    inputMode="numeric"
                     value={height} 
-                    onChange={(e) => setHeight(e.target.value)} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, ''); // Csak számokat enged
+                      if (val === '' || parseInt(val) <= 299) {
+                        setHeight(val);
+                      }
+                    }} 
                   />
                 </div>
                 

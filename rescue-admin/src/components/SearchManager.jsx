@@ -1642,7 +1642,7 @@ const SearchManager = () => {
                   value={height}
                   onChange={(e) => handleNumberChange(e.target.value, setHeight)}
                   min="0"
-                  max="100"
+                  max="299"
                 />
                 <label className="block mb-2">{t('clothing-label')}</label>
                 <input
